@@ -120,6 +120,14 @@ function ChartTooltipContent({
   labelKey,
 }: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
   React.ComponentProps<"div"> & {
+    active?: boolean
+    payload?: Array<{
+      name?: string
+      value?: number | string
+      dataKey?: string | number
+      color?: string
+      payload?: unknown
+    }>
     hideLabel?: boolean
     hideIndicator?: boolean
     indicator?: "line" | "dot" | "dashed"
