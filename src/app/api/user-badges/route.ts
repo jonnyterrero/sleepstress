@@ -51,10 +51,13 @@ export async function GET(request: NextRequest) {
 
     // Search across badge name and description
     if (search) {
-      conditions.push(or(
+      const searchCondition = or(
         like(userBadges.badgeName, `%${search}%`),
         like(userBadges.badgeDescription, `%${search}%`)
-      ));
+      );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     // Build query conditionally - avoid reassignment to prevent type issues

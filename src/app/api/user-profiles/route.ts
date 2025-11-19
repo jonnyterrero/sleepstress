@@ -61,13 +61,14 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      conditions.push(
-        or(
-          like(userProfiles.userId, `%${search}%`),
-          like(userProfiles.gender, `%${search}%`),
-          like(userProfiles.activityLevel, `%${search}%`)
-        )
+      const searchCondition = or(
+        like(userProfiles.userId, `%${search}%`),
+        like(userProfiles.gender, `%${search}%`),
+        like(userProfiles.activityLevel, `%${search}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     // Build query conditionally - avoid reassignment to prevent type issues

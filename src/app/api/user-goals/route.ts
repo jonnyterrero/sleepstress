@@ -72,12 +72,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      conditions.push(
-        or(
-          like(userGoals.goalName, `%${search}%`),
-          like(userGoals.goalType, `%${search}%`)
-        )
+      const searchCondition = or(
+        like(userGoals.goalName, `%${search}%`),
+        like(userGoals.goalType, `%${search}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     // Build query conditionally - avoid reassignment to prevent type issues
