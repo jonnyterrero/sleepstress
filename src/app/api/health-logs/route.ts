@@ -89,17 +89,23 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(healthLogs.date, endDate));
     }
 
-    // Build query with conditions - handle single condition vs multiple
+    // Build query with conditions - build complete chain in one go
     const orderDirection = order === 'asc' ? asc : desc;
     const sortColumn = sort === 'date' ? healthLogs.date : healthLogs.createdAt;
     
-    const baseQuery = db.select().from(healthLogs);
-    const queryWithWhere = conditions.length > 0
-      ? baseQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions))
-      : baseQuery;
-    const queryWithOrder = queryWithWhere.orderBy(orderDirection(sortColumn));
-
-    const results = await queryWithOrder.limit(limit).offset(offset);
+    // Build query: if conditions exist, include where clause, otherwise skip it
+    const results = conditions.length > 0
+      ? await db.select()
+          .from(healthLogs)
+          .where(conditions.length === 1 ? conditions[0] : and(...conditions))
+          .orderBy(orderDirection(sortColumn))
+          .limit(limit)
+          .offset(offset)
+      : await db.select()
+          .from(healthLogs)
+          .orderBy(orderDirection(sortColumn))
+          .limit(limit)
+          .offset(offset);
 
     return NextResponse.json(results);
   } catch (error) {
