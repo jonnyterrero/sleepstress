@@ -89,23 +89,23 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(healthLogs.date, endDate));
     }
 
-    // Build query with conditions - build complete chain in one go
+    // Build query with conditions - match pattern from other routes
+    let query = db.select().from(healthLogs);
+
+    // Apply conditions
+    if (conditions.length > 0) {
+      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
+    }
+
+    // Apply sorting
     const orderDirection = order === 'asc' ? asc : desc;
-    const sortColumn = sort === 'date' ? healthLogs.date : healthLogs.createdAt;
-    
-    // Build query: if conditions exist, include where clause, otherwise skip it
-    const results = conditions.length > 0
-      ? await db.select()
-          .from(healthLogs)
-          .where(conditions.length === 1 ? conditions[0] : and(...conditions))
-          .orderBy(orderDirection(sortColumn))
-          .limit(limit)
-          .offset(offset)
-      : await db.select()
-          .from(healthLogs)
-          .orderBy(orderDirection(sortColumn))
-          .limit(limit)
-          .offset(offset);
+    if (sort === 'date') {
+      query = query.orderBy(orderDirection(healthLogs.date));
+    } else {
+      query = query.orderBy(orderDirection(healthLogs.createdAt));
+    }
+
+    const results = await query.limit(limit).offset(offset);
 
     return NextResponse.json(results);
   } catch (error) {
