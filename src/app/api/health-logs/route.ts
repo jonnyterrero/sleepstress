@@ -61,8 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     // List with filtering
-    let query = db.select().from(healthLogs);
-    let conditions = [];
+    const conditions = [];
 
     // Filter by userId
     if (userId) {
@@ -90,22 +89,17 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(healthLogs.date, endDate));
     }
 
-    // Apply conditions
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    // Apply sorting
+    // Build query with conditions - handle single condition vs multiple
     const orderDirection = order === 'asc' ? asc : desc;
-    if (sort === 'date') {
-      query = query.orderBy(orderDirection(healthLogs.date));
-    } else if (sort === 'createdAt') {
-      query = query.orderBy(orderDirection(healthLogs.createdAt));
-    } else {
-      query = query.orderBy(orderDirection(healthLogs.createdAt));
-    }
+    const sortColumn = sort === 'date' ? healthLogs.date : healthLogs.createdAt;
+    
+    const baseQuery = db.select().from(healthLogs);
+    const queryWithWhere = conditions.length > 0
+      ? baseQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions))
+      : baseQuery;
+    const queryWithOrder = queryWithWhere.orderBy(orderDirection(sortColumn));
 
-    const results = await query.limit(limit).offset(offset);
+    const results = await queryWithOrder.limit(limit).offset(offset);
 
     return NextResponse.json(results);
   } catch (error) {
