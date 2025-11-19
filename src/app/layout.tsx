@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import VisualEditsMessenger from "../visual-edits/VisualEditsMessenger";
 import ErrorReporter from "@/components/ErrorReporter";
@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   title: "Sleep & Stress Tracker",
   description: "Track your sleep, stress, and mood with AI-powered insights",
   manifest: "/manifest.json",
-  themeColor: "#6366f1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -26,12 +25,14 @@ export const metadata: Metadata = {
       { url: "/icon-152x152.png", sizes: "152x152", type: "image/png" },
     ],
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#6366f1",
 };
 
 export default function RootLayout({
