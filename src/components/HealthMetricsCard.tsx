@@ -2,10 +2,10 @@
 
 import { Card } from "@/components/ui/card";
 import { ArrowUp, ArrowDown } from "lucide-react";
-import { LucideIcon } from "lucide-react";
+import { type ComponentType } from "react";
 
 interface HealthMetricsCardProps {
-  icon: LucideIcon;
+  icon: ComponentType<{ className?: string }>;
   title: string;
   value: string;
   maxValue: string;
