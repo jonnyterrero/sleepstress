@@ -3,11 +3,35 @@ import "./globals.css";
 import VisualEditsMessenger from "../visual-edits/VisualEditsMessenger";
 import ErrorReporter from "@/components/ErrorReporter";
 import { Toaster } from "@/components/ui/sonner";
+import PWARegister from "@/components/PWARegister";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Sleep & Stress +",
+  title: "Sleep & Stress Tracker",
   description: "Track your sleep, stress, and mood with AI-powered insights",
+  manifest: "/manifest.json",
+  themeColor: "#6366f1",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Sleep & Stress Tracker",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icon-152x152.png", sizes: "152x152", type: "image/png" },
+    ],
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({
@@ -17,6 +41,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-152x152.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Sleep & Stress Tracker" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-TileColor" content="#6366f1" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+      </head>
       <body className="antialiased">
         <ErrorReporter />
         <Script
@@ -31,6 +65,8 @@ export default function RootLayout({
         />
         {children}
         <Toaster />
+        <PWARegister />
+        <PWAInstallPrompt />
         <VisualEditsMessenger />
       </body>
     </html>

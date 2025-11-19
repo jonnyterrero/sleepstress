@@ -271,7 +271,13 @@ function ChartLegendContent({
   nameKey,
 }: React.ComponentProps<"div"> &
   Pick<RechartsPrimitive.LegendProps, "verticalAlign"> & {
-    payload?: RechartsPrimitive.LegendProps["payload"]
+    payload?: Array<{
+      value?: string | number
+      dataKey?: string | number
+      color?: string
+      name?: string
+      payload?: Record<string, unknown>
+    }>
     hideIcon?: boolean
     nameKey?: string
   }) {
