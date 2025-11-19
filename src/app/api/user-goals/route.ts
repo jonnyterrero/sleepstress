@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { userGoals } from '@/db/schema';
-import { eq, like, and, or, desc, asc } from 'drizzle-orm';
+import { eq, like, and, or, desc, asc, SQL } from 'drizzle-orm';
 
 const VALID_STATUSES = ['active', 'achieved', 'at_risk'];
 
@@ -51,8 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     // List with filters
-    let query = db.select().from(userGoals);
-    let conditions = [];
+    const conditions: SQL[] = [];
 
     if (userId) {
       conditions.push(eq(userGoals.userId, userId));
@@ -81,24 +80,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    // Apply sorting
+    // Build query conditionally - avoid reassignment to prevent type issues
     const orderDirection = order === 'asc' ? asc : desc;
-    if (sort === 'createdAt') {
-      query = query.orderBy(orderDirection(userGoals.createdAt));
-    } else if (sort === 'goalName') {
-      query = query.orderBy(orderDirection(userGoals.goalName));
-    } else if (sort === 'status') {
-      query = query.orderBy(orderDirection(userGoals.status));
-    } else if (sort === 'progressPercentage') {
-      query = query.orderBy(orderDirection(userGoals.progressPercentage));
-    }
+    const sortColumn = sort === 'createdAt' ? userGoals.createdAt :
+                      sort === 'goalName' ? userGoals.goalName :
+                      sort === 'status' ? userGoals.status :
+                      sort === 'progressPercentage' ? userGoals.progressPercentage :
+                      userGoals.createdAt;
 
-    const results = await query.limit(limit).offset(offset);
-    return NextResponse.json(results);
+    const baseQuery = db.select().from(userGoals);
+
+    if (conditions.length > 0) {
+      const whereCondition = conditions.length === 1 ? conditions[0] : and(...conditions);
+      const queryWithWhere = baseQuery.where(whereCondition);
+      const queryWithOrder = queryWithWhere.orderBy(orderDirection(sortColumn));
+      const results = await queryWithOrder.limit(limit).offset(offset);
+      return NextResponse.json(results);
+    } else {
+      const queryWithOrder = baseQuery.orderBy(orderDirection(sortColumn));
+      const results = await queryWithOrder.limit(limit).offset(offset);
+      return NextResponse.json(results);
+    }
 
   } catch (error) {
     console.error('GET error:', error);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { userProfiles } from '@/db/schema';
-import { eq, like, and, or, desc, asc } from 'drizzle-orm';
+import { eq, like, and, or, desc, asc, SQL } from 'drizzle-orm';
 
 function calculateBMI(heightCm: number, weightKg: number): number {
   if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) {
@@ -54,10 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     // List records with filtering and pagination
-    let query = db.select().from(userProfiles);
-
-    // Apply filters
-    const conditions = [];
+    const conditions: SQL[] = [];
     
     if (userId) {
       conditions.push(eq(userProfiles.userId, userId));
@@ -73,26 +70,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
-
-    // Apply sorting
+    // Build query conditionally - avoid reassignment to prevent type issues
     const orderBy = order === 'asc' ? asc : desc;
-    if (sort === 'userId') {
-      query = query.orderBy(orderBy(userProfiles.userId));
-    } else if (sort === 'age') {
-      query = query.orderBy(orderBy(userProfiles.age));
-    } else if (sort === 'bmi') {
-      query = query.orderBy(orderBy(userProfiles.bmi));
-    } else if (sort === 'updatedAt') {
-      query = query.orderBy(orderBy(userProfiles.updatedAt));
-    } else {
-      query = query.orderBy(orderBy(userProfiles.createdAt));
-    }
+    const sortColumn = sort === 'userId' ? userProfiles.userId :
+                      sort === 'age' ? userProfiles.age :
+                      sort === 'bmi' ? userProfiles.bmi :
+                      sort === 'updatedAt' ? userProfiles.updatedAt :
+                      userProfiles.createdAt;
 
-    const results = await query.limit(limit).offset(offset);
-    return NextResponse.json(results);
+    const baseQuery = db.select().from(userProfiles);
+
+    if (conditions.length > 0) {
+      const whereCondition = conditions.length === 1 ? conditions[0] : and(...conditions);
+      const queryWithWhere = baseQuery.where(whereCondition);
+      const queryWithOrder = queryWithWhere.orderBy(orderBy(sortColumn));
+      const results = await queryWithOrder.limit(limit).offset(offset);
+      return NextResponse.json(results);
+    } else {
+      const queryWithOrder = baseQuery.orderBy(orderBy(sortColumn));
+      const results = await queryWithOrder.limit(limit).offset(offset);
+      return NextResponse.json(results);
+    }
 
   } catch (error) {
     console.error('GET error:', error);

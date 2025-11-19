@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { userBadges } from '@/db/schema';
-import { eq, like, and, or, desc, asc } from 'drizzle-orm';
+import { eq, like, and, or, desc, asc, SQL } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,8 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     // List with filtering
-    let query = db.select().from(userBadges);
-    let conditions = [];
+    const conditions: SQL[] = [];
 
     // Filter by userId
     if (userId) {
@@ -58,23 +57,26 @@ export async function GET(request: NextRequest) {
       ));
     }
 
-    // Apply conditions
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    // Apply sorting
+    // Build query conditionally - avoid reassignment to prevent type issues
     const sortField = sort === 'badgeName' ? userBadges.badgeName :
                      sort === 'badgeId' ? userBadges.badgeId :
                      sort === 'userId' ? userBadges.userId :
                      userBadges.unlockedAt;
 
-    query = query.orderBy(order === 'asc' ? asc(sortField) : desc(sortField))
-                 .limit(limit)
-                 .offset(offset);
+    const orderDirection = order === 'asc' ? asc(sortField) : desc(sortField);
+    const baseQuery = db.select().from(userBadges);
 
-    const badges = await query;
-    return NextResponse.json(badges);
+    if (conditions.length > 0) {
+      const whereCondition = conditions.length === 1 ? conditions[0] : and(...conditions);
+      const queryWithWhere = baseQuery.where(whereCondition);
+      const queryWithOrder = queryWithWhere.orderBy(orderDirection);
+      const badges = await queryWithOrder.limit(limit).offset(offset);
+      return NextResponse.json(badges);
+    } else {
+      const queryWithOrder = baseQuery.orderBy(orderDirection);
+      const badges = await queryWithOrder.limit(limit).offset(offset);
+      return NextResponse.json(badges);
+    }
 
   } catch (error) {
     console.error('GET error:', error);
