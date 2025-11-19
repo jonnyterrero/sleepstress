@@ -126,7 +126,9 @@ function ChartTooltipContent({
       value?: number | string
       dataKey?: string | number
       color?: string
-      payload?: unknown
+      payload?: Record<string, unknown> & {
+        fill?: string
+      }
     }>
     label?: string | number
     labelFormatter?: (value: unknown, payload: Array<unknown>) => React.ReactNode
@@ -193,7 +195,7 @@ function ChartTooltipContent({
         {payload.map((item, index) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
-          const indicatorColor = color || item.payload.fill || item.color
+          const indicatorColor = color || (item.payload?.fill as string | undefined) || item.color
 
           return (
             <div
