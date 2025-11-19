@@ -245,7 +245,7 @@ export async function PUT(request: NextRequest) {
     const newTargetValue = updates.targetValue !== undefined ? updates.targetValue : currentRecord.targetValue;
     const newCurrentValue = updates.currentValue !== undefined ? updates.currentValue : currentRecord.currentValue;
     
-    let progressPercentage = currentRecord.progressPercentage;
+    let progressPercentage: number = currentRecord.progressPercentage ?? 0;
     if (updates.targetValue !== undefined || updates.currentValue !== undefined) {
       progressPercentage = calculateProgressPercentage(newCurrentValue, newTargetValue);
     }
