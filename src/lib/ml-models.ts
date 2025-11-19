@@ -210,7 +210,13 @@ export class AnomalyDetector {
     anomalyScore: number;
     severity: 'low' | 'medium' | 'high';
   }[] {
-    const anomalies = [];
+    const anomalies: {
+      date: Date;
+      metric: string;
+      value: number;
+      anomalyScore: number;
+      severity: 'low' | 'medium' | 'high';
+    }[] = [];
     
     for (const entry of data) {
       // Check for extreme values
@@ -220,7 +226,7 @@ export class AnomalyDetector {
           metric: 'Stress Level',
           value: entry.stressLevel,
           anomalyScore: (entry.stressLevel - 5) / 5,
-          severity: entry.stressLevel > 9 ? 'high' : 'medium' as const,
+          severity: (entry.stressLevel > 9 ? 'high' : 'medium') as 'low' | 'medium' | 'high',
         });
       }
       
@@ -230,7 +236,7 @@ export class AnomalyDetector {
           metric: 'Sleep Quality',
           value: entry.sleepQuality,
           anomalyScore: (5 - entry.sleepQuality) / 5,
-          severity: entry.sleepQuality < 2 ? 'high' : 'medium' as const,
+          severity: (entry.sleepQuality < 2 ? 'high' : 'medium') as 'low' | 'medium' | 'high',
         });
       }
     }
