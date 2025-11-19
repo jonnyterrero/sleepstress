@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { healthLogs } from '@/db/schema';
-import { eq, like, and, or, desc, asc, gte, lte } from 'drizzle-orm';
+import { eq, like, and, or, desc, asc, gte, lte, SQL } from 'drizzle-orm';
 
 // Helper function to validate date format (YYYY-MM-DD)
 function isValidDate(dateString: string): boolean {
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     // List with filtering
-    const conditions = [];
+    const conditions: SQL[] = [];
 
     // Filter by userId
     if (userId) {
@@ -89,25 +89,24 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(healthLogs.date, endDate));
     }
 
-    // Build query with conditions - match pattern from other routes
-    let query = db.select().from(healthLogs);
-
-    // Apply conditions
-    if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
-
-    // Apply sorting
+    // Build and execute query - avoid reassignment to prevent type issues
     const orderDirection = order === 'asc' ? asc : desc;
-    if (sort === 'date') {
-      query = query.orderBy(orderDirection(healthLogs.date));
+    const sortColumn = sort === 'date' ? healthLogs.date : healthLogs.createdAt;
+    
+    // Build query conditionally based on whether we have conditions
+    const baseQuery = db.select().from(healthLogs);
+    
+    if (conditions.length > 0) {
+      const whereCondition = conditions.length === 1 ? conditions[0] : and(...conditions);
+      const queryWithWhere = baseQuery.where(whereCondition);
+      const queryWithOrder = queryWithWhere.orderBy(orderDirection(sortColumn));
+      const results = await queryWithOrder.limit(limit).offset(offset);
+      return NextResponse.json(results);
     } else {
-      query = query.orderBy(orderDirection(healthLogs.createdAt));
+      const queryWithOrder = baseQuery.orderBy(orderDirection(sortColumn));
+      const results = await queryWithOrder.limit(limit).offset(offset);
+      return NextResponse.json(results);
     }
-
-    const results = await query.limit(limit).offset(offset);
-
-    return NextResponse.json(results);
   } catch (error) {
     console.error('GET error:', error);
     return NextResponse.json({ 
